@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salt Landscaping — Transcript Processor Workflow Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-salt: #F5F2ED;
+  --color-stone: #C8BFB0;
+  --color-sand: #E2D9CC;
+  --color-charcoal: #2C2C2A;
+  --color-earth: #6B5E50;
+  --color-sage: #8A9B8E;
+  --color-timber: #A07850;
+  --color-steel: #5A6068;
+  --color-sage-light: #B4C2B7;
+  --color-sage-dark: #6A7D6E;
+  --color-timber-dark: #7A5830;
+  --color-timber-light: #C4A07A;
+  --color-sand-dark: #D0C4B3;
+  --color-success: #6B8F71;
+  --color-warning: #C4953A;
+  --color-error: #9E4B4B;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--color-salt); color: var(--color-charcoal); font-family: var(--font-body); font-weight: 400; line-height: 1.6; }
+
+.header { background: var(--color-charcoal); padding: 2.5rem 2rem; }
+.header-inner { max-width: 800px; margin: 0 auto; }
+.header-brand { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--color-sage); font-weight: 600; }
+.header-title { font-family: var(--font-display); font-size: 1.8rem; font-weight: 500; color: var(--color-salt); margin-top: 0.5rem; line-height: 1.2; }
+.header-subtitle { font-size: 0.9rem; color: var(--color-stone); margin-top: 0.5rem; }
+
+.container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+
+.meta { display: flex; gap: 2rem; padding: 1.25rem 1.5rem; background: #fff; border: 1px solid var(--color-sand); border-radius: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
+.meta-item { font-size: 0.82rem; color: var(--color-steel); }
+.meta-item strong { color: var(--color-charcoal); font-weight: 500; }
+
+h2 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 500; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-sand); }
+h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; margin: 1.5rem 0 0.5rem; color: var(--color-charcoal); }
+h4 { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-sage-dark); margin: 1.25rem 0 0.5rem; }
+
+p { color: var(--color-steel); font-size: 0.9rem; margin-bottom: 0.75rem; line-height: 1.65; }
+
+.card { background: #fff; border: 1px solid var(--color-sand); border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
+.card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.card-num { width: 32px; height: 32px; border-radius: 50%; background: var(--color-sage); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; flex-shrink: 0; }
+.card-title { font-size: 1rem; font-weight: 500; }
+
+ol, ul { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+li { font-size: 0.9rem; color: var(--color-steel); margin-bottom: 0.35rem; line-height: 1.55; }
+li strong { color: var(--color-charcoal); font-weight: 500; }
+
+code { font-family: var(--font-mono); font-size: 0.82rem; background: var(--color-salt); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--color-sand); }
+
+.code-block { font-family: var(--font-mono); font-size: 0.78rem; background: var(--color-charcoal); color: var(--color-salt); padding: 1.25rem 1.5rem; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; line-height: 1.7; margin: 0.75rem 0 1rem; }
+.code-block .comment { color: var(--color-sage-light); }
+.code-block .key { color: var(--color-timber-light); }
+.code-block .val { color: var(--color-sage-light); }
+
+.flow-diagram { background: #fff; border: 1px solid var(--color-sand); border-radius: 10px; padding: 1.5rem; margin: 1rem 0 1.5rem; }
+.flow-step { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem; }
+.flow-arrow { color: var(--color-timber); font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+.flow-text { font-size: 0.88rem; color: var(--color-steel); }
+.flow-text strong { color: var(--color-charcoal); }
+
+.tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.tag-exact { background: #E8EFE9; color: var(--color-sage-dark); }
+.tag-name { background: #EFECE6; color: var(--color-timber-dark); }
+.tag-address { background: #FBF6EE; color: var(--color-warning); }
+.tag-unmatched { background: #F5EDED; color: var(--color-error); }
+
+.callout { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; font-size: 0.88rem; }
+.callout-info { background: #EEF2EF; border-left: 3px solid var(--color-sage); color: var(--color-sage-dark); }
+.callout-warn { background: #FBF6EE; border-left: 3px solid var(--color-warning); color: var(--color-earth); }
+.callout-critical { background: #F5EDED; border-left: 3px solid var(--color-error); color: var(--color-error); }
+
+table { width: 100%; border-collapse: collapse; margin: 0.75rem 0 1rem; font-size: 0.85rem; }
+th { text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-steel); padding: 0.6rem 0.75rem; border-bottom: 1.5px solid var(--color-stone); }
+td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--color-sand); color: var(--color-steel); }
+
+.footer { text-align: center; padding: 2rem; font-size: 0.78rem; color: var(--color-stone); }
+
+@media print {
+  body { background: #fff; }
+  .header { break-after: avoid; }
+  .card { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-brand">Salt Landscaping</div>
+    <div class="header-title">Transcript Processor Workflow</div>
+    <div class="header-subtitle">Automated meeting transcript routing for accurate project quoting</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="meta">
+    <div class="meta-item"><strong>Version:</strong> 1.0</div>
+    <div class="meta-item"><strong>Created:</strong> 13 April 2026</div>
+    <div class="meta-item"><strong>Account:</strong> hello@saltlandscaping.com.au</div>
+    <div class="meta-item"><strong>Platform:</strong> Google Apps Script</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <h2>What This System Does</h2>
+
+  <p>Warren and Billy have a daily video call on Google Meet where they discuss multiple client projects — materials, measurements, scope changes, timelines. Gemini automatically records and transcribes these calls.</p>
+  <p>This system takes those transcripts, identifies which clients were discussed, splits the transcript into per-client segments, and saves each segment to the correct client's Google Drive folder — automatically, with zero manual handling.</p>
+  <p>The saved transcripts feed into the Trellis quoting system, giving Claude the rich context it needs to draft accurate quotes.</p>
+
+  <div class="flow-diagram">
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Warren + Billy video call</strong> on Google Meet (Gemini records + transcribes)</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Gemini auto-emails</strong> transcript to hello@saltlandscaping.com.au</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Apps Script runs every 15 min</strong> — detects the new email</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Extracts full transcript</strong> from the linked Google Doc (Transcript tab)</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Matches client mentions</strong> against Drive folder names (EXACT &rarr; NAME &rarr; ADDRESS)</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Splits transcript</strong> into per-client segments</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Saves each segment</strong> to client's <code>06 - Quoting Context</code> subfolder in Drive</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Unmatched segments</strong> &rarr; Billy gets email with "Assign Client" button</span></div>
+    <div class="flow-step"><span class="flow-arrow">&rarr;</span><span class="flow-text"><strong>Trellis / Claude</strong> references the quoting context folder when drafting quotes</span></div>
+  </div>
+
+  <!-- PREREQUISITES -->
+  <h2>Prerequisites</h2>
+
+  <ul>
+    <li>Google Workspace account: <code>hello@saltlandscaping.com.au</code></li>
+    <li>Google Meet with Gemini note-taking enabled on the workspace</li>
+    <li>A recurring Google Calendar invite called <strong>Warren + Billy - Quoting</strong> (Tue-Fri)</li>
+    <li>Client project folders in Google Drive under <strong>Landscaping Projects</strong></li>
+    <li>Folder naming convention: <code>{Client Name} - {Address}</code> (matches HubSpot deal names)</li>
+  </ul>
+
+  <!-- GOOGLE DRIVE STRUCTURE -->
+  <h2>Google Drive Structure</h2>
+
+  <div class="code-block"><span class="comment">// The parent folder that contains all client project folders</span>
+<span class="key">Landscaping Projects/</span>
+  <span class="val">Sean Bryant - 42 Marine Pde Capalaba/</span>
+    01 - Overview/
+    02 - Communications/
+    03 - Site Information/
+    04 - Designs/
+    05 - Proposals/
+    <span class="key">06 - Quoting Context/</span>              <span class="comment">// Created automatically</span>
+      Warren-Billy Quoting Notes - 2026-04-14.gdoc
+      Warren-Billy Quoting Notes - 2026-04-15.gdoc
+  <span class="val">Adam Horton - 15 Valley View Rd Valdora/</span>
+    01 - Overview/
+    ...
+    <span class="key">06 - Quoting Context/</span>
+      Warren-Billy Quoting Notes - 2026-04-14.gdoc
+
+<span class="comment">// For segments that can't be matched to a client</span>
+<span class="key">Unmatched Transcripts/</span>
+  Unmatched - Notes 'Warren + Billy - Quoting' - 2026-04-14.gdoc</div>
+
+  <div class="callout callout-info">The <code>06 - Quoting Context</code> subfolder is created automatically the first time a transcript is saved to a client folder. No manual setup required for any client.</div>
+
+  <!-- CLIENT MATCHING -->
+  <h2>How Client Matching Works</h2>
+
+  <p>Billy announces each client before discussing their project on the call. The system matches what Billy says against the Google Drive folder names using a 3-tier cascade:</p>
+
+  <table>
+    <thead>
+      <tr><th>Priority</th><th>Strategy</th><th>Example</th><th>What Triggers It</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><span class="tag tag-exact">EXACT</span></td>
+        <td>Billy says "Sean Bryant - 42 Marine Pde Capalaba"</td>
+        <td>Full folder name found verbatim in transcript</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><span class="tag tag-name">NAME</span></td>
+        <td>Billy says "Sean Bryant" (address garbled by Gemini)</td>
+        <td>Client full name found with word boundaries</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><span class="tag tag-address">ADDRESS</span></td>
+        <td>Billy says "the Capalaba job on Marine Parade"</td>
+        <td>2+ address tokens match, or 1 long suburb name (6+ chars)</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><span class="tag tag-unmatched">UNMATCHED</span></td>
+        <td>Nothing matches any folder</td>
+        <td>Billy gets email notification to manually assign</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warn"><strong>For best accuracy:</strong> Billy should say the client name and address in the same format as the Drive folder / HubSpot deal before discussing each project. e.g. "Okay, let's talk about Sean Bryant - 42 Marine Parade Capalaba."</div>
+
+  <!-- UNMATCHED WORKFLOW -->
+  <h2>Unmatched Segment Workflow</h2>
+
+  <p>When a transcript segment can't be matched to any client folder:</p>
+
+  <ol>
+    <li>The segment is saved to an <strong>"Unmatched Transcripts"</strong> folder in Drive</li>
+    <li>Billy receives a <strong>SALT-branded notification email</strong> with a preview of the unmatched text</li>
+    <li>The email contains an <strong>"Assign Client"</strong> button</li>
+    <li>Clicking it opens a <strong>searchable list of all client folders</strong> (web app)</li>
+    <li>Billy taps the correct client &rarr; the document is <strong>automatically moved</strong> to that client's <code>06 - Quoting Context</code> folder</li>
+  </ol>
+
+  <div class="callout callout-info">No manual Drive navigation required. Billy just reads the preview, taps the client name, done.</div>
+
+  <!-- SETUP FROM SCRATCH -->
+  <h2>Setup Guide: Building From Scratch</h2>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">1</span>
+      <span class="card-title">Create the Google Apps Script Project</span>
+    </div>
+    <ol>
+      <li>Go to <strong>script.google.com</strong> while signed in as <code>hello@saltlandscaping.com.au</code></li>
+      <li>Click <strong>New project</strong></li>
+      <li>Name it <strong>"SALT Transcript Processor"</strong></li>
+      <li>Select all default code (Cmd+A) and delete it</li>
+      <li>Paste the full script from <code>~/Projects/salt-transcript-processor/Code.gs</code></li>
+      <li>Click <strong>Save</strong> (Cmd+S)</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">2</span>
+      <span class="card-title">Verify Configuration</span>
+    </div>
+    <p>Check these values at the top of the script match your environment:</p>
+    <div class="code-block"><span class="key">PARENT_FOLDER_ID:</span> <span class="val">'1GS6Z6vPwqUmFK1LbYgaUFhB1BTRPdeyz'</span>  <span class="comment">// "Landscaping Projects" folder ID</span>
+<span class="key">GMAIL_ACCOUNT:</span> <span class="val">'hello@saltlandscaping.com.au'</span>
+<span class="key">GEMINI_SENDER:</span> <span class="val">'gemini-notes@google.com'</span>
+<span class="key">MEETING_TITLES:</span> <span class="val">['Warren + Billy', 'Warren + Billy - Quoting']</span>
+<span class="key">NOTIFICATION_EMAIL:</span> <span class="val">'billy@cactusculture.com.au'</span>
+<span class="key">CLIENT_SUBFOLDER:</span> <span class="val">'06 - Quoting Context'</span></div>
+    <p>To find a Google Drive folder ID: open the folder in Drive, the ID is the last part of the URL after <code>/folders/</code>.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">3</span>
+      <span class="card-title">Run Setup</span>
+    </div>
+    <ol>
+      <li>In the function dropdown (top of editor, next to Run button), select <strong>setup</strong></li>
+      <li>Click <strong>Run</strong></li>
+      <li>Google will ask you to <strong>authorize permissions</strong> — review and approve all</li>
+      <li>Check the execution log to confirm:
+        <ul>
+          <li>Gmail label "Processed-Transcript" created</li>
+          <li>Log spreadsheet "Transcript Processing Log" created</li>
+          <li>"Unmatched Transcripts" folder created</li>
+          <li>15-minute trigger created</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">4</span>
+      <span class="card-title">Deploy as Web App</span>
+    </div>
+    <p>This enables the "Assign Client" feature for unmatched transcripts.</p>
+    <ol>
+      <li>Click <strong>Deploy</strong> (top right) &rarr; <strong>New deployment</strong></li>
+      <li>Click the <strong>gear icon</strong> next to "Select type" &rarr; choose <strong>Web app</strong></li>
+      <li>Set <strong>Execute as:</strong> Me (hello@saltlandscaping.com.au)</li>
+      <li>Set <strong>Who has access:</strong> Anyone within Salt Landscaping</li>
+      <li>Click <strong>Deploy</strong></li>
+      <li>A URL will be generated — the notification emails will use this automatically</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">5</span>
+      <span class="card-title">Set Up the Calendar Invite</span>
+    </div>
+    <ol>
+      <li>Create a <strong>recurring Google Calendar event</strong> (Tuesday to Friday)</li>
+      <li>Title: <strong>Warren + Billy - Quoting</strong> (must match exactly)</li>
+      <li>Add Warren and Billy as attendees</li>
+      <li>Use <strong>Google Meet</strong> for the video call</li>
+      <li>Ensure <strong>Gemini note-taking</strong> is enabled for the workspace</li>
+    </ol>
+    <div class="callout callout-warn"><strong>Critical:</strong> The calendar invite title must exactly match one of the values in the <code>MEETING_TITLES</code> config. If it doesn't match, the script will ignore the transcript.</div>
+  </div>
+
+  <!-- BILLY'S PROTOCOL -->
+  <h2>Billy's Meeting Protocol</h2>
+
+  <p>For the system to work accurately, Billy should follow this simple pattern during every Warren + Billy call:</p>
+
+  <div class="card">
+    <h4>Before discussing each client</h4>
+    <p>Clearly say the client name and address in the same format as the Drive folder:</p>
+    <div class="code-block"><span class="key">"Okay, let's talk about Sean Bryant - 42 Marine Parade Capalaba."</span>
+
+<span class="comment">// Then discuss materials, measurements, scope, timeline, etc.</span>
+
+<span class="key">"Alright, next is Adam Horton - 15 Valley View Road Valdora."</span>
+
+<span class="comment">// Discuss Adam's project...</span></div>
+    <p>This gives Gemini a clean delimiter to transcribe, and gives the script an exact match against the Drive folder.</p>
+  </div>
+
+  <!-- MONITORING -->
+  <h2>Monitoring &amp; Troubleshooting</h2>
+
+  <h3>Log Spreadsheet</h3>
+  <p>A spreadsheet called <strong>"Transcript Processing Log"</strong> is created in the Drive root. Each row shows:</p>
+  <table>
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Timestamp</td><td>When the action occurred (AEST)</td></tr>
+      <tr><td>Email Subject</td><td>The Gemini email subject line</td></tr>
+      <tr><td>Message ID</td><td>Gmail message ID for debugging</td></tr>
+      <tr><td>Action</td><td>PROCESSING, SAVED, NO_MATCH, MANUAL_ASSIGN, FATAL_ERROR, etc.</td></tr>
+      <tr><td>Client Matched</td><td>Which client folder the segment was matched to</td></tr>
+      <tr><td>Folder Path</td><td>Full path where the doc was saved</td></tr>
+      <tr><td>Doc URL</td><td>Direct link to the created Google Doc</td></tr>
+      <tr><td>Notes</td><td>Match type, character count, error details</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Common Issues</h3>
+  <table>
+    <thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Script doesn't pick up transcripts</td>
+        <td>Meeting title doesn't match config</td>
+        <td>Check calendar invite title matches <code>MEETING_TITLES</code> exactly</td>
+      </tr>
+      <tr>
+        <td>Client not matched</td>
+        <td>Billy didn't say the client name clearly, or Gemini garbled it</td>
+        <td>Billy will get the "Assign Client" email — tap to assign manually</td>
+      </tr>
+      <tr>
+        <td>Wrong client matched</td>
+        <td>Similar names or common words causing false positives</td>
+        <td>Check the log sheet. Move the doc manually in Drive if needed</td>
+      </tr>
+      <tr>
+        <td>Duplicate docs</td>
+        <td>Script ran twice on same email</td>
+        <td>Built-in: checks for existing doc with same name before creating</td>
+      </tr>
+      <tr>
+        <td>"Assign Client" link doesn't work</td>
+        <td>Web app not deployed or redeployed</td>
+        <td>Go to Apps Script &rarr; Deploy &rarr; Manage deployments &rarr; verify active</td>
+      </tr>
+      <tr>
+        <td>No transcript content (only summary)</td>
+        <td>Google Doc doesn't have a Transcript tab</td>
+        <td>Falls back to email body. Ensure Gemini transcription is enabled</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Execution Limits</h3>
+  <ul>
+    <li>Google Apps Script: 6 minutes max execution time per run</li>
+    <li>Config limits processing to 10 emails per run (safety valve)</li>
+    <li>If you have a backlog of 50+ unprocessed emails, they'll be processed over several trigger runs</li>
+  </ul>
+
+  <!-- CONFIGURATION REFERENCE -->
+  <h2>Full Configuration Reference</h2>
+
+  <table>
+    <thead><tr><th>Key</th><th>Default Value</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>PARENT_FOLDER_ID</code></td><td><code>1GS6Z6v...deyz</code></td><td>Google Drive folder ID for "Landscaping Projects"</td></tr>
+      <tr><td><code>GMAIL_ACCOUNT</code></td><td><code>hello@saltlandscaping.com.au</code></td><td>Gmail account to search for transcripts</td></tr>
+      <tr><td><code>GEMINI_SENDER</code></td><td><code>gemini-notes@google.com</code></td><td>Email address Gemini sends from</td></tr>
+      <tr><td><code>MEETING_TITLES</code></td><td><code>['Warren + Billy', 'Warren + Billy - Quoting']</code></td><td>Calendar invite titles to match (case-insensitive)</td></tr>
+      <tr><td><code>LABEL_NAME</code></td><td><code>Processed-Transcript</code></td><td>Gmail label applied to processed emails</td></tr>
+      <tr><td><code>CLIENT_SUBFOLDER</code></td><td><code>06 - Quoting Context</code></td><td>Subfolder name created inside each client folder</td></tr>
+      <tr><td><code>DOC_NAME_PREFIX</code></td><td><code>Warren-Billy Quoting Notes</code></td><td>Prefix for saved Google Docs</td></tr>
+      <tr><td><code>LOG_SHEET_NAME</code></td><td><code>Transcript Processing Log</code></td><td>Name of the monitoring spreadsheet</td></tr>
+      <tr><td><code>UNMATCHED_FOLDER_NAME</code></td><td><code>Unmatched Transcripts</code></td><td>Folder for unmatched segments</td></tr>
+      <tr><td><code>MAX_EMAILS_PER_RUN</code></td><td><code>10</code></td><td>Safety limit per 15-minute trigger run</td></tr>
+      <tr><td><code>NOTIFICATION_EMAIL</code></td><td><code>billy@cactusculture.com.au</code></td><td>Who receives unmatched segment alerts</td></tr>
+    </tbody>
+  </table>
+
+  <!-- KEY FUNCTIONS -->
+  <h2>Key Functions</h2>
+
+  <table>
+    <thead><tr><th>Function</th><th>Purpose</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr><td><code>setup()</code></td><td>Creates label, log sheet, folder, trigger</td><td>Run once during initial setup</td></tr>
+      <tr><td><code>processNewTranscripts()</code></td><td>Main entry point — finds and processes new emails</td><td>Called automatically every 15 minutes</td></tr>
+      <tr><td><code>processManually(messageId)</code></td><td>Process a single email by Gmail message ID</td><td>Testing / reprocessing a specific email</td></tr>
+      <tr><td><code>testMatching()</code></td><td>Dry run — shows matches without saving</td><td>Debugging matching accuracy</td></tr>
+      <tr><td><code>doGet(e)</code></td><td>Serves the client assignment web page</td><td>Called when Billy clicks "Assign Client"</td></tr>
+      <tr><td><code>assignToClient(docId, folderId, name)</code></td><td>Moves an unmatched doc to a client folder</td><td>Called by the web app when Billy selects a client</td></tr>
+    </tbody>
+  </table>
+
+  <!-- SOURCE CODE -->
+  <h2>Source Code Location</h2>
+
+  <p>The complete script is stored locally at:</p>
+  <div class="code-block"><span class="key">~/Projects/salt-transcript-processor/Code.gs</span>  <span class="comment">// 1,232 lines</span></div>
+  <p>If rebuilding from scratch, copy this file and paste it into a new Apps Script project. Then follow Steps 2-5 above.</p>
+
+  <div class="footer">
+    Salt Landscaping &middot; Transcript Processor Workflow Guide &middot; Version 1.0 &middot; 13 April 2026
+  </div>
+
+</div>
+
+</body>
+</html>
