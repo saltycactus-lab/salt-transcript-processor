@@ -22,11 +22,12 @@ var CONFIG = {
   // Sender of Gemini meeting notes
   GEMINI_SENDER: 'gemini-notes@google.com',
 
-  // Meeting titles to match (case-insensitive). The subject format from
+  // Meeting title matching (case-insensitive). The subject format from
   // Gemini is: "Notes: '{Meeting Title}' {Date}"
-  // Matches if the meeting title equals ANY of these exactly.
-  // 'Warren + Billy' is the historical title, 'Warren + Billy - Quoting' is the new one.
-  MEETING_TITLES: ['Warren + Billy', 'Warren + Billy - Quoting'],
+  // ALL of these keywords must appear in the title (fuzzy match).
+  // e.g. "Warren + Billy - Quoting", "Billy + Warren - Quick Quote", etc.
+  MEETING_TITLE_REQUIRED_WORDS: ['Warren', 'Billy'],
+  MEETING_TITLE_REQUIRED_ANY: ['Quote', 'Quoting'],  // at least ONE of these must appear
 
   // Gmail label used to mark processed emails
   LABEL_NAME: 'Processed-Transcript',
@@ -323,26 +324,38 @@ function isFromGemini_(msg) {
 }
 
 /**
- * Returns true if the subject matches any of the configured meeting titles.
- * Subject format from Gemini: "Notes: 'Warren + Billy' 10 Apr 2026"
+ * Returns true if the meeting title contains ALL required words AND at least
+ * one of the quoting keywords. Handles any word order.
+ * e.g. "Warren + Billy - Quoting", "Billy + Warren - Quick Quote",
+ *      "Warren and Billy quote review" all match.
+ * Subject format from Gemini: "Notes: 'Warren + Billy - Quoting' 10 Apr 2026"
  */
 function isMatchingSubject_(msg) {
   var subject = msg.getSubject();
 
   // Extract the meeting title from between quotes (handles straight + smart quotes)
+  var titleToCheck = '';
   var match = subject.match(/^Notes:\s*['\u2018\u2019\u201C\u201D](.+?)['\u2018\u2019\u201C\u201D]/i);
   if (match) {
-    var meetingTitle = match[1].trim().toLowerCase();
-    return CONFIG.MEETING_TITLES.some(function(title) {
-      return meetingTitle === title.toLowerCase();
-    });
+    titleToCheck = match[1].trim().toLowerCase();
+  } else {
+    // Fallback: use full subject
+    titleToCheck = subject.toLowerCase();
   }
 
-  // Fallback: check if any configured title appears in the subject (no quotes)
-  var subjectLower = subject.toLowerCase();
-  return CONFIG.MEETING_TITLES.some(function(title) {
-    return subjectLower.indexOf(title.toLowerCase()) !== -1;
+  // ALL required words must be present (e.g. "Warren" AND "Billy")
+  var hasAllRequired = CONFIG.MEETING_TITLE_REQUIRED_WORDS.every(function(word) {
+    return titleToCheck.indexOf(word.toLowerCase()) !== -1;
   });
+
+  if (!hasAllRequired) return false;
+
+  // At least ONE quoting keyword must be present (e.g. "Quote" OR "Quoting")
+  var hasQuotingWord = CONFIG.MEETING_TITLE_REQUIRED_ANY.some(function(word) {
+    return titleToCheck.indexOf(word.toLowerCase()) !== -1;
+  });
+
+  return hasQuotingWord;
 }
 
 /**
